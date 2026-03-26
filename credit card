@@ -1,0 +1,181 @@
+
+# Import required libraries
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+
+
+# Load the dataset
+
+df = pd.read_csv("Data/creditcard.csv")   # Change path if needed
+
+print("First 5 rows:")
+print(df.head())
+
+print("\nDataset info:")
+print(df.info())
+
+print("\nMissing values:")
+print(df.isnull().sum())
+
+
+# Descriptive Statistics Function
+
+def descriptive_statistics(data, column):
+    print(f"\nDescriptive statistics for {column}:")
+    print("Mean:", data[column].mean())
+    print("Median:", data[column].median())
+    print("Standard Deviation:", data[column].std())
+    print("Minimum:", data[column].min())
+    print("Maximum:", data[column].max())
+
+
+# Apply descriptive statistics on dependent variable
+
+descriptive_statistics(df, "Class")
+
+
+# Random Sampling
+
+random_sample = df.sample(n=150, random_state=1)
+descriptive_statistics(random_sample, "Class")
+
+
+# Systematic Sampling
+
+k = int(len(df) / 150)
+systematic_sample = df.iloc[::k]
+descriptive_statistics(systematic_sample, "Class")
+
+
+# Scatter Plot
+
+plt.figure(figsize=(8, 6))
+plt.scatter(df["Amount"], df["Class"])
+plt.xlabel("Amount")
+plt.ylabel("Class")
+plt.title("Scatter Plot of Amount vs Class")
+plt.grid(True)
+plt.show()
+
+
+# Box Plot
+
+df.boxplot(column="Amount", by="Class")
+plt.title("Box Plot of Amount by Class")
+plt.suptitle("")
+plt.xlabel("Class")
+plt.ylabel("Amount")
+plt.show()
+
+
+# Histogram
+
+plt.figure(figsize=(8, 6))
+plt.hist(df["Amount"], bins=30)
+plt.xlabel("Transaction Amount")
+plt.ylabel("Frequency")
+plt.title("Histogram of Transaction Amount")
+plt.grid(True)
+plt.show()
+
+
+# Heat Map
+
+numeric_df = df.select_dtypes(include=["number"])
+corr = numeric_df.corr()
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr, cmap="Blues")
+plt.title("Correlation Heat Map")
+plt.show()
+
+
+# Pearson Correlation
+
+pearson_corr = stats.pearsonr(df["Amount"], df["Class"])
+print("\nPearson Correlation:", pearson_corr)
+
+
+# Spearman Correlation
+
+spearman_corr = stats.spearmanr(df["Amount"], df["Class"])
+print("Spearman Correlation:", spearman_corr)
+
+
+# Chi-Square Test
+
+df["Amount_Category"] = pd.cut(df["Amount"], bins=3)
+contingency_table = pd.crosstab(df["Amount_Category"], df["Class"])
+chi2 = stats.chi2_contingency(contingency_table)
+print("Chi-Square Test:", chi2)
+
+
+# One Sample T-Test
+
+ttest_result = stats.ttest_1samp(df["Amount"], 100)
+print("One Sample T-Test:", ttest_result)
+
+
+# Machine Learning Section
+# K-NN Classification
+
+
+# Define X and y
+X = df.drop(columns=["Class", "Amount_Category"])
+y = df["Class"]
+
+print("\nShape of X:", X.shape)
+print("Shape of y:", y.shape)
+
+
+# Split the data
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=0
+)
+
+
+# Feature Scaling
+
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+
+# Training the K-NN model
+classifier = KNeighborsClassifier(n_neighbors=7, metric='minkowski', p=2)
+classifier.fit(X_train, y_train)
+
+
+# Predicting the Test set results
+
+y_pred = classifier.predict(X_test)
+
+
+# Making the Confusion Matrix
+
+cm = confusion_matrix(y_test, y_pred)
+print("\nConfusion Matrix:")
+print(cm)
+
+accuracy = accuracy_score(y_test, y_pred)
+print("\nAccuracy:", accuracy)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+
+# Predicting one sample from test data
+
+sample = X_test[0:1]
+prediction = classifier.predict(sample)
+print("\nPrediction for one sample:", prediction)
